@@ -30,9 +30,10 @@ A Flask + Streamlit + MongoDB application for uploading, analysing, comparing, a
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-org/paper-iq.git
-cd paper-iq
+git clone https://github.com/NikunjPatel0110/ResearchPaper_Analyser
+cd ResearchPaper_Analyser
 ```
+
 
 ### 2. Create and activate a virtual environment
 
@@ -190,6 +191,9 @@ Authentication uses **JWT Bearer tokens**. Include `Authorization: Bearer <token
 - **Auth**: bcrypt passwords, JWT tokens, invite-only registration
 
 ---
+
+## Author
+- **Nikunj Patel** - [GitHub Profile](https://github.com/NikunjPatel0110)
 
 ## License
 
