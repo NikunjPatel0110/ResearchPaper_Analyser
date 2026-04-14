@@ -1,0 +1,33 @@
+# --- Environment & Sensitive Data ---
+.env
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# --- NLP & Machine Learning ---
+# Ignore downloaded spaCy models or local FAISS indexes
+backend/services/faiss_index/
+*.index
+*.pkl
+*.joblib
+# If you download large model weights locally
+models/weights/
+
+# --- Frontend (Streamlit) ---
+.streamlit/config.toml
+.streamlit/secrets.toml
+
+# --- OS & IDE Files ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Logs & Temp Files ---
+logs/
+*.log
+tmp/
+backend/uploads/
