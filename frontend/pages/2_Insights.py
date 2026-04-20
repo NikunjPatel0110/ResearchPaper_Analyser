@@ -18,7 +18,7 @@ def auth_headers():
 
 def fetch_papers():
     try:
-        r = requests.get(f"{API_BASE}/papers", headers=auth_headers(), timeout=10)
+        r = requests.get(f"{API_BASE}/papers/", headers=auth_headers(), timeout=10)
         data = r.json()
         return data["data"] if data.get("success") else []
     except Exception:
@@ -33,22 +33,37 @@ if not papers:
     st.stop()
 
 options = {}
-for p in papers:
-    t = p.get("title", "Untitled")
-    if t not in options:
-        options[t] = str(p.get("paper_id") or p.get("_id") or p.get("id", ""))
-chosen_title = st.selectbox("Select a paper", list(options.keys()))
+if isinstance(papers, list):
+    for p in papers:
+        if isinstance(p, dict):
+            t = p.get("title", "Untitled")
+            if t not in options:
+                options[t] = str(p.get("paper_id") or p.get("_id") or p.get("id", ""))
+        else:
+            st.error(f"Backend returned unexpected data format: {p}")
+else:
+    st.error("Could not fetch papers. Check if the Flask backend is running.")
+
+if not options:
+    st.info("No documents are processed yet. Upload a paper and wait a moment.")
+    st.stop()
+
+# Title selection
+titles = list(options.keys())
+chosen_title = st.selectbox("Select a Research Paper", titles)
 paper_id = options[chosen_title]
 
-if st.button("Load Insights", use_container_width=False):
-    with st.spinner("Fetching…"):
+if st.button("Load Insights", use_container_width=False, type="primary"):
+    with st.spinner("Fetching analysis..."):
         try:
             r = requests.get(
-                f"{API_BASE}/papers/{paper_id}", headers=auth_headers(), timeout=15
+                f"{API_BASE}/papers/{paper_id}/insights", headers=auth_headers(), timeout=15
             )
-            paper = r.json().get("data", {})
-            if isinstance(paper, list):
-                paper = paper[0] if paper else {}
+            result = r.json()
+            if not result.get("success"):
+                st.error(f"Error: {result.get('error')}")
+                st.stop()
+            paper = result.get("data", {})
         except Exception:
             st.error("Failed to load paper.")
             st.stop()
@@ -117,7 +132,26 @@ if st.button("Load Insights", use_container_width=False):
         for sp in similar[:5]:
             with st.container(border=True):
                 c1, c2 = st.columns([3, 1])
-                c1.markdown(f"**{sp.get('title', 'Untitled')}**")
+                
+                title = sp.get("title", "Untitled")
+                url = sp.get("url", "")
+                
+                if url:
+                    # If it's an internal link (relative path), prepend the base origin and append token
+                    if url.startswith("/"):
+                        # Deriving base origin from API_BASE (assuming http://domain:port/api/v1)
+                        # We'll just use the host part of API_BASE
+                        import urllib.parse
+                        parsed_base = urllib.parse.urlparse(API_BASE)
+                        base_origin = f"{parsed_base.scheme}://{parsed_base.netloc}"
+                        full_url = f"{base_origin}{url}?token={st.session_state.token}"
+                    else:
+                        full_url = url
+                    
+                    c1.markdown(f"**[{title}]({full_url})**")
+                else:
+                    c1.markdown(f"**{title}**")
+                
                 c1.caption(sp.get("source", "Internal"))
                 c2.metric("Similarity", f"{sp.get('score', 0):.0%}")
 

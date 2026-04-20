@@ -86,4 +86,33 @@ if invites_data.get("success"):
 else:
     st.warning("Could not load invite codes.")
 
+st.divider()
+
+# ── System Maintenance ────────────────────────────────────────────────────────
+st.subheader("🛠️ System Maintenance")
+st.markdown("Use these tools to keep the AI engine in sync and perform deep cleaning.")
+
+col1, col2 = st.columns([1, 2])
+with col1:
+    if st.button("🚀 Cleanup & Optimize Index", use_container_width=True):
+        with st.spinner("Scrubbing orphaned vectors..."):
+            try:
+                r = requests.post(f"{API_BASE}/papers/maintenance/optimize", headers=auth_headers(), timeout=60)
+                data = r.json()
+                if data.get("success"):
+                    stats = data["data"]
+                    st.success("✅ Optimization Complete!")
+                    st.json(stats)
+                else:
+                    st.error(data.get("error", "Optimization failed."))
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+with col2:
+    st.info(
+        "**What does this do?**\n"
+        "1. Scans the AI index for 'ghost' data (remnants of manual DB deletions).\n"
+        "2. Physically removes orphaned embeddings from the `.index` file.\n"
+        "3. Shrinks the file size and optimizes searching speed."
+    )
+
 

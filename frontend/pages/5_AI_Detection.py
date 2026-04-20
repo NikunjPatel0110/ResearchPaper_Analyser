@@ -16,7 +16,7 @@ def auth_headers():
 
 def fetch_papers():
     try:
-        r = requests.get(f"{API_BASE}/papers", headers=auth_headers(), timeout=10)
+        r = requests.get(f"{API_BASE}/papers/", headers=auth_headers(), timeout=10)
         data = r.json()
         return data["data"] if data.get("success") else []
     except Exception:
@@ -32,18 +32,32 @@ if not papers:
     st.stop()
 
 options = {}
-for p in papers:
-    t = p.get("title", "Untitled")
-    if t not in options:
-        options[t] = str(p.get("paper_id") or p.get("_id") or p.get("id", ""))
-chosen = st.selectbox("Select a paper", list(options.keys()))
+if isinstance(papers, list):
+    for p in papers:
+        if isinstance(p, dict):
+            t = p.get("title", "Untitled")
+            if t not in options:
+                options[t] = str(p.get("paper_id") or p.get("_id") or p.get("id", ""))
+        else:
+            st.error(f"Backend returned unexpected data format: {p}")
+else:
+    st.error("Could not fetch papers. Check if the Flask backend is running.")
+
+if not options:
+    st.info("No processed papers found. Upload a paper first.")
+    st.stop()
+
+# Title selection
+titles = list(options.keys())
+chosen_title = st.selectbox("Select a Research Paper to Analyse", titles)
+paper_id = options[chosen_title]
 
 if st.button("🧠 Detect AI Content", use_container_width=True, type="primary"):
-    paper_id = options[chosen]
     with st.spinner("Analysing writing patterns…"):
         try:
             r = requests.post(
-                f"{API_BASE}/papers/{paper_id}/detect-ai",
+                f"{API_BASE}/papers/ai-detection",
+                json={"paper_id": paper_id},
                 headers=auth_headers(),
                 timeout=60,
             )
@@ -57,8 +71,9 @@ if st.button("🧠 Detect AI Content", use_container_width=True, type="primary")
         st.stop()
 
     data = result["data"]
-    prob = data.get("ai_probability", 0)
-    confidence = data.get("confidence", "low")
+    # API returns ai_probability as 0-100 (percent); convert to 0-1 fraction for display
+    prob = max(0.0, min(1.0, data.get("ai_probability", 0) / 100.0))
+    confidence = data.get("confidence", "low").lower()
     explanation = data.get("explanation", "")
 
     st.divider()

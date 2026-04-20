@@ -6,7 +6,8 @@ def jwt_required_custom(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         try:
-            verify_jwt_in_request()
+            # Allow token in headers (default) or query string (for direct browser links)
+            verify_jwt_in_request(locations=["headers", "query_string"])
         except Exception as e:
             return jsonify({"success": False, "error": "Missing or invalid token", "data": None}), 401
         return fn(*args, **kwargs)

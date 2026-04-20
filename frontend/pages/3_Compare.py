@@ -16,7 +16,7 @@ def auth_headers():
 
 def fetch_papers():
     try:
-        r = requests.get(f"{API_BASE}/papers", headers=auth_headers(), timeout=10)
+        r = requests.get(f"{API_BASE}/papers/", headers=auth_headers(), timeout=10)
         data = r.json()
         return data["data"] if data.get("success") else []
     except Exception:
@@ -31,10 +31,21 @@ if len(papers) < 2:
     st.stop()
 
 options = {}
-for p in papers:
-    t = p.get("title", "Untitled")
-    if t not in options:
-        options[t] = str(p.get("paper_id") or p.get("_id") or p.get("id", ""))
+if isinstance(papers, list):
+    for p in papers:
+        if isinstance(p, dict):
+            t = p.get("title", "Untitled")
+            if t not in options:
+                options[t] = str(p.get("paper_id") or p.get("_id") or p.get("id", ""))
+        else:
+            st.error(f"Backend returned unexpected data format: {p}")
+else:
+    st.error("Could not fetch papers. Check if the Flask backend is running.")
+
+if not options:
+    st.info("No papers processed yet. Upload more and wait for them to be ready.")
+    st.stop()
+
 titles = list(options.keys())
 
 col1, col2 = st.columns(2)
@@ -42,6 +53,9 @@ with col1:
     title_a = st.selectbox("Paper A", titles, index=0, key="pa")
 with col2:
     remaining = [t for t in titles if t != title_a]
+    if not remaining:
+        st.warning("You need at least 2 papers for comparison.")
+        st.stop()
     title_b = st.selectbox("Paper B", remaining, index=0, key="pb")
 
 if st.button("⚖️ Compare", use_container_width=True, type="primary"):

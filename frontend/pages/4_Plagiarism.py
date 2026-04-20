@@ -16,7 +16,7 @@ def auth_headers():
 
 def fetch_papers():
     try:
-        r = requests.get(f"{API_BASE}/papers", headers=auth_headers(), timeout=10)
+        r = requests.get(f"{API_BASE}/papers/", headers=auth_headers(), timeout=10)
         data = r.json()
         return data["data"] if data.get("success") else []
     except Exception:
@@ -31,18 +31,35 @@ if not papers:
     st.stop()
 
 options = {}
-for p in papers:
-    t = p.get("title", "Untitled")
-    if t not in options:
-        options[t] = str(p.get("paper_id") or p.get("_id") or p.get("id", ""))
-chosen = st.selectbox("Select a paper to check", list(options.keys()))
+if isinstance(papers, list):
+    for p in papers:
+        if isinstance(p, dict):
+            t = p.get("title", "Untitled")
+            if t not in options:
+                options[t] = str(p.get("paper_id") or p.get("_id") or p.get("id", ""))
+        else:
+            st.error(f"Backend returned unexpected data format: {p}")
+else:
+    st.error("Could not fetch papers. Check if the Flask backend is running.")
+
+if not options:
+    st.info("No processed papers found. Upload a paper first.")
+    st.stop()
+
+# Title selection
+titles = list(options.keys())
+chosen_title = st.selectbox("Select a Research Paper to Scan", titles)
+paper_id = options[chosen_title]
+
+# Optional Threshold setting
+threshold = st.slider("Similarity Threshold (%)", min_value=10, max_value=95, value=40, step=5) / 100.0
 
 if st.button("🔎 Run Plagiarism Check", use_container_width=True, type="primary"):
-    paper_id = options[chosen]
     with st.spinner("Scanning for plagiarism… this may take a moment."):
         try:
             r = requests.post(
-                f"{API_BASE}/papers/{paper_id}/plagiarism",
+                f"{API_BASE}/papers/plagiarism-check",
+                json={"paper_id": paper_id, "threshold": threshold},
                 headers=auth_headers(),
                 timeout=60,
             )
@@ -56,7 +73,7 @@ if st.button("🔎 Run Plagiarism Check", use_container_width=True, type="primar
         st.stop()
 
     data = result["data"]
-    overall = data.get("overall_score", 0)
+    overall = data.get("overall_similarity", 0)
 
     st.divider()
     # Overall score
@@ -75,20 +92,20 @@ if st.button("🔎 Run Plagiarism Check", use_container_width=True, type="primar
     st.progress(min(overall, 1.0))
 
     # Flagged chunks
-    chunks = data.get("flagged_chunks", [])
+    chunks = data.get("matches", [])
     if chunks:
         st.divider()
         st.subheader(f"Flagged Passages ({len(chunks)})")
         for i, chunk in enumerate(chunks, 1):
             with st.expander(
-                f"Chunk {i} — Score: {chunk.get('score', 0):.0%}  |  Source: {chunk.get('source', 'Unknown')}"
+                f"Chunk {i} — Score: {chunk.get('similarity', 0):.0%}  |  Source: {chunk.get('matched_paper_title', 'Unknown')}"
             ):
                 st.markdown(
-                    f"**Source:** [{chunk.get('source', '—')}]({chunk.get('source_url', '#')})"
+                    f"**Source:** {chunk.get('matched_paper_title', '—')}"
                 )
-                st.metric("Match Score", f"{chunk.get('score', 0):.0%}")
+                st.metric("Match Score", f"{chunk.get('similarity', 0):.0%}")
                 st.markdown("**Flagged text:**")
-                text = chunk.get("text", "")
+                text = chunk.get("chunk_text", "")
                 st.markdown(
                     f"<div style='background:#2d1c1c;padding:0.75rem;border-radius:6px;"
                     f"border-left:3px solid #fc8181;color:#fed7d7;font-size:0.9rem'>{text}</div>",

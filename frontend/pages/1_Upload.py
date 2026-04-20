@@ -30,7 +30,7 @@ if uploaded:
         st.metric("Size", f"{uploaded.size / 1024:.1f} KB")
     with col2:
         if st.button("🚀 Upload & Analyse", use_container_width=True):
-            with st.spinner("Uploading and analysing…"):
+            with st.spinner("Uploading… (analysis runs in the background)"):
                 files = {"file": (uploaded.name, uploaded.getvalue(), uploaded.type)}
                 try:
                     resp = requests.post(
@@ -39,29 +39,57 @@ if uploaded:
                         headers=auth_headers(),
                         timeout=60,
                     )
+
+                    # Accept 200/201 (sync) and 202 (async background processing)
+                    if resp.status_code not in (200, 201, 202):
+                        try:
+                            err_msg = resp.json().get("error", "The server encountered an error.")
+                            st.error(f"Upload Blocked (Error {resp.status_code}): {err_msg}")
+                        except:
+                            st.error(f"Backend Error {resp.status_code}: Something broke on the server.")
+                        
+                        if resp.status_code != 409: # Show debug info for non-duplicate errors
+                            st.code(resp.text[:500])
+                        st.stop()
+
                     data = resp.json()
-                except requests.exceptions.ConnectionError:
-                    st.error("Cannot reach the backend.")
+
+                except requests.exceptions.ConnectionError as e:
+                    st.error(f"Connection dropped! Is the backend running? Details: {str(e)}")
+                    st.stop()
+                except ValueError:
+                    st.error("Backend returned an invalid response (not JSON).")
+                    st.code(resp.text[:500])
                     st.stop()
 
             if data.get("success"):
-                paper = data["data"]
-                st.success("✅ Paper uploaded and analysed successfully!")
-                st.divider()
+                paper  = data["data"]
+                status = paper.get("status", "ready")
 
-                m1, m2 = st.columns(2)
-                m1.metric("Word Count", paper.get("word_count", "—"))
-                m2.metric("Paper ID", str(paper.get("_id", "—"))[:16] + "…")
+                if status == "processing":
+                    st.success("✅ Paper uploaded! Analysis is running in the background.")
+                    st.info(
+                        "⏳ Large PDFs take 1–2 minutes to process. "
+                        "Go to the **Insights** page and select this paper once it shows as *ready*."
+                    )
+                    st.metric("Paper ID", str(paper.get("_id", "—"))[:16] + "…")
+                else:
+                    st.success("✅ Paper uploaded and analysed successfully!")
+                    st.divider()
 
-                st.subheader("Summary")
-                st.write(paper.get("summary", "*No summary available.*"))
+                    m1, m2 = st.columns(2)
+                    m1.metric("Word Count", paper.get("word_count", "—"))
+                    m2.metric("Paper ID", str(paper.get("_id", "—"))[:16] + "…")
 
-                with st.expander("Top Keywords"):
-                    kws = paper.get("keywords", [])
-                    if kws:
-                        kw_strings = [k.get("word") if isinstance(k, dict) else k for k in kws]
-                        st.write(", ".join(kw_strings))
-                    else:
-                        st.write("None extracted.")
+                    st.subheader("Summary")
+                    st.write(paper.get("summary", "*No summary available.*"))
+
+                    with st.expander("Top Keywords"):
+                        kws = paper.get("keywords", [])
+                        if kws:
+                            kw_strings = [k.get("word") if isinstance(k, dict) else k for k in kws]
+                            st.write(", ".join(kw_strings))
+                        else:
+                            st.write("None extracted.")
             else:
                 st.error(data.get("error", "Upload failed."))

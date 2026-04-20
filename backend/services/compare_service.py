@@ -44,15 +44,15 @@ def compare_papers(paper_id_1, paper_id_2):
 
     return _ok({
         "comparison_id":     str(res.inserted_id),
-        "paper_1":           {"id": paper_id_1, "title": p1["title"]},
-        "paper_2":           {"id": paper_id_2, "title": p2["title"]},
+        "paper_a":           {"id": paper_id_1, "title": p1["title"]},
+        "paper_b":           {"id": paper_id_2, "title": p2["title"]},
         "similarity_score":  round(similarity_score, 4),
         "keyword_overlap":   keyword_overlap,
+        "keywords_a":        list(kw1),
+        "keywords_b":        list(kw2),
         "shared_keywords":   list(shared),
-        "unique_to_paper_1": list(kw1 - kw2),
-        "unique_to_paper_2": list(kw2 - kw1),
-        "summary_1":         p1.get("summary", ""),
-        "summary_2":         p2.get("summary", "")
+        "summary_a":         p1.get("summary", ""),
+        "summary_b":         p2.get("summary", "")
     }), 200
 
 
