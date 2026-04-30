@@ -16,7 +16,7 @@ from backend.routes.auth import auth_bp
 from backend.routes.papers import papers_bp
 from backend.services.plagiarism_service import ensure_indexes
 from backend.services.nlp_service import warmup_models
-
+from backend.routes.payments import payments_bp
 
 def create_app(config_class=Config):
     app = Flask(__name__, template_folder="templates")
@@ -32,7 +32,7 @@ def create_app(config_class=Config):
     # Blueprints
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(papers_bp, url_prefix="/api/v1/papers")
-
+    app.register_blueprint(payments_bp)
     # Database index initialization
     with app.app_context():
         try:

@@ -16,6 +16,7 @@ from backend.services import (
     compare_service,
     plagiarism_service,
     ai_detect_service,
+    subscription_service,
 )
 
 papers_bp = Blueprint("papers", __name__)
@@ -34,7 +35,7 @@ def _log_bg(paper_id, msg):
     print(f"[{ts}][BG-{paper_id[:6]}] {msg}", flush=True)
 
 
-def _process_paper(app, paper_id, filepath, ext):
+def _process_paper(app, paper_id, filepath, ext, user_id):
     """Background thread: run full NLP pipeline and update MongoDB."""
     with app.app_context():
         try:
@@ -66,7 +67,9 @@ def _process_paper(app, paper_id, filepath, ext):
                 "status":     "ready",
             }})
             _log_bg(paper_id, "Step 5/5: FINISHED successfully.")
-
+            # ── Increment quota counter (only on success) ─────────────────
+            subscription_service.increment_upload_count(user_id)
+            _log_bg(paper_id, f"Quota incremented for user {user_id[:6]}")
         except Exception as e:
             _log_bg(paper_id, f"CRITICAL FAILURE: {str(e)}")
             import traceback
@@ -92,7 +95,23 @@ def upload():
 
     if not parse_service.allowed_extension(file.filename):
         return jsonify(_err("Only PDF, TXT, DOCX allowed")), 400
-
+    # ── Quota check ──────────────────────────────────────────────────────────
+    quota = subscription_service.get_user_quota(user_id)
+    if not quota:
+        return jsonify(_err("Could not verify upload quota")), 500
+    if not quota["can_upload"]:
+        return jsonify({
+            "success":          False,
+            "data":             None,
+            "error":            "Upload limit reached",
+            "upgrade_required": True,
+            "quota":            quota,
+            "message": (
+                f"You have used all {quota['upload_limit']} uploads on the "
+                f"{quota['plan_label']} plan. Upgrade to continue uploading."
+            )
+        }), 402
+    # ── End quota check ───────────────────────────────────────────────────────
     ext        = parse_service.get_extension(file.filename)
     filename   = secure_filename(f"{uuid.uuid4()}.{ext}")
     upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], user_id)
@@ -122,7 +141,7 @@ def upload():
     # Kick off NLP pipeline in a background thread — avoids HTTP timeout on large PDFs
     thread = threading.Thread(
         target=_process_paper,
-        args=(current_app._get_current_object(), paper_id, filepath, ext),
+        args=(current_app._get_current_object(), paper_id, filepath, ext, user_id),
         daemon=True,
     )
     thread.start()

@@ -22,5 +22,24 @@ class Config:
     FAISS_META_PATH              = "faiss_meta.json"
     SIMILARITY_THRESHOLD         = 0.85
     PLAGIARISM_OVERALL_THRESHOLD = 0.15
+#------------------
+# Paste these into your existing Config class
+RAZORPAY_KEY_ID         = os.getenv("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET     = os.getenv("RAZORPAY_KEY_SECRET", "")
+RAZORPAY_CURRENCY       = os.getenv("RAZORPAY_CURRENCY", "INR")
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
 
+FREE_UPLOAD_LIMIT = int(os.getenv("FREE_UPLOAD_LIMIT", 10))
 
+PLAN_PRICES = {
+    "basic":    int(os.getenv("PLAN_BASIC_PRICE",    49900)),
+    "pro":      int(os.getenv("PLAN_PRO_PRICE",      99900)),
+    "lifetime": int(os.getenv("PLAN_LIFETIME_PRICE", 299900)),
+}
+PLAN_UPLOAD_LIMITS = {
+    "free": 10, "basic": 50, "pro": 500, "lifetime": 999999,
+}
+PLAN_LABELS = {
+    "free": "Free", "basic": "Basic - Rs.499/month",
+    "pro": "Pro - Rs.999/month", "lifetime": "Lifetime - Rs.2999",
+}
