@@ -32,7 +32,8 @@ def create_app(config_class=Config):
     # Blueprints
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(papers_bp, url_prefix="/api/v1/papers")
-    app.register_blueprint(payments_bp)
+    app.register_blueprint(payments_bp, url_prefix="/api/v1/payments")
+    # app.register_blueprint(payments_bp)
     # Database index initialization
     with app.app_context():
         try:

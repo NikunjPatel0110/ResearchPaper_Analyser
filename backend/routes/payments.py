@@ -13,9 +13,9 @@ import json
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt_identity
 
-from middleware.auth_middleware import jwt_required_custom
-from services import subscription_service, razorpay_service
-from config import Config
+from backend.middleware.auth_middleware import jwt_required_custom
+from backend.services import subscription_service, razorpay_service
+from backend.config import Config
 
 payments_bp = Blueprint("payments", __name__, url_prefix="/api/v1/payments")
 
@@ -27,8 +27,11 @@ def _err(msg): return {"success": False, "data": None, "error": msg}
 # ── Plans catalogue ───────────────────────────────────────────────────────────
 @payments_bp.route("/plans", methods=["GET"])
 def list_plans():
-    result, code = subscription_service.get_plans()
-    return jsonify(result), code
+    # plans = subscription_service.get_plans()
+    # return jsonify({"success": True, "data": plans}), 200
+    response = subscription_service.get_plans()
+    return jsonify(response), 200
+
 
 
 # ── Current user quota ────────────────────────────────────────────────────────
@@ -103,8 +106,8 @@ def verify_payment():
             return jsonify(_err(f"Payment not captured. Status: {status}")), 402
 
     # 3. Activate plan
-    result, code = subscription_service.activate_plan(user_id, plan, payment_id, order_id)
-    return jsonify(result), code
+    response = subscription_service.activate_plan(user_id, plan, payment_id, order_id)
+    return jsonify(response), 200
 
 
 # ── Payment history ───────────────────────────────────────────────────────────
@@ -112,8 +115,8 @@ def verify_payment():
 @jwt_required_custom
 def payment_history():
     user_id = get_jwt_identity()
-    result, code = subscription_service.get_payment_history(user_id)
-    return jsonify(result), code
+    response = subscription_service.get_payment_history(user_id)
+    return jsonify(response), 200
 
 
 # ── Razorpay Webhook (server-to-server, no JWT) ───────────────────────────────
@@ -164,7 +167,7 @@ def _handle_captured(payment):
         return
 
     # Idempotency: check if this payment_id was already processed
-    from models.db import get_collection
+    from backend.models.db import get_collection
     existing = get_collection("payments").find_one({"payment_id": payment_id})
     if existing:
         return  # Already processed via /verify — skip

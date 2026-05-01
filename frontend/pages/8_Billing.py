@@ -4,7 +4,7 @@
 import streamlit as st
 import requests
 
-API = "http://localhost:5000/api/v1"
+API = "http://127.0.0.1:5000/api/v1"
 
 st.set_page_config(page_title="Billing — Paper IQ", page_icon="💳")
 
@@ -21,8 +21,15 @@ def get_quota():
 
 
 def get_plans():
-    r = requests.get(f"{API}/payments/plans", timeout=10)
-    return r.json().get("data", []) if r.ok else []
+  try:
+          r = requests.get(f"{API}/payments/plans", headers=headers, timeout=10)
+          if r.ok:
+              data = r.json().get("data", [])
+              # Double check that data is actually a list
+              return data if isinstance(data, list) else []
+          return []
+  except Exception:
+      return []
 
 
 def get_history():
@@ -116,7 +123,8 @@ if st.session_state.get("show_checkout") and st.session_state.get("selected_plan
 <div id="msg" style="font-family:sans-serif;padding:6px;min-height:30px"></div>
 <button id="paybtn" onclick="pay()"
   style="background:#6C63FF;color:#fff;border:none;padding:12px 0;
-         font-size:15px;border-radius:8px;cursor:pointer;width:100%">
+         font-size:15px;border-radius:8px;cursor:pointer;width:100%;
+         margin-top: 20px;"> <!-- Added margin here -->
   Pay &#8377;{od['amount'] // 100} with Razorpay
 </button>
 <script>
@@ -171,7 +179,7 @@ function pay() {{
 }}
 </script></body></html>"""
 
-            st.components.v1.html(html, height=110)
+            st.components.v1.html(html, height=600)
 
         if st.button("Cancel"):
             st.session_state.pop("show_checkout", None)
