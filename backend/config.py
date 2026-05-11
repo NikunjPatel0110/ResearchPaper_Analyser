@@ -87,7 +87,7 @@ class Config:
         "lifetime": int(os.getenv("PLAN_LIFETIME_PRICE", 299900)),
     }
     PLAN_UPLOAD_LIMITS = {
-        "free": 2, "basic": 50, "pro": 500, "lifetime": 999999,
+        "free": 2, "basic": 10, "pro": 500, "lifetime": 999999,
     }
     PLAN_LABELS = {
         "free": "Free", "basic": "Basic - Rs.499/month",

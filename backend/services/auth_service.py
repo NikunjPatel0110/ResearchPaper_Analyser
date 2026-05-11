@@ -70,7 +70,7 @@ def login_user(email, password):
     }), 200
 
 
-def create_invite(admin_user_id, expires_in_hours=48, note=""):
+def create_invite(admin_user_id, expires_in_hours=720, note=""):
     code = "INV-" + secrets.token_hex(4).upper()
     expires_at = datetime.utcnow() + timedelta(hours=expires_in_hours)
 
