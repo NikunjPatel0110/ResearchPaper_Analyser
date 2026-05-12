@@ -3,7 +3,7 @@ import requests
 import altair as alt
 import pandas as pd
 
-API_BASE = "http://127.0.0.1:5000/api/v1"
+API_BASE = "https://researchpaper-analyser.onrender.com"
 
 st.set_page_config(page_title="Insights — Paper IQ", page_icon="🔍", layout="wide")
 

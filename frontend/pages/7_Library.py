@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 
-API_BASE = "http://127.0.0.1:5000/api/v1"
+API_BASE = "https://researchpaper-analyser.onrender.com"
 
 st.set_page_config(page_title="Manage Library — Paper IQ", page_icon="📚", layout="wide")
 

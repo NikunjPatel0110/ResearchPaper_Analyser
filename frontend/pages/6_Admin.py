@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 
-API_BASE = "http://127.0.0.1:5000/api/v1"
+API_BASE = "https://researchpaper-analyser.onrender.com"
 
 st.set_page_config(page_title="Admin — Paper IQ", page_icon="🛡️", layout="wide")
 

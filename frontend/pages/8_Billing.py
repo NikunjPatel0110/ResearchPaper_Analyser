@@ -4,7 +4,7 @@
 import streamlit as st
 import requests
 
-API = "http://127.0.0.1:5000/api/v1"
+API = "https://researchpaper-analyser.onrender.com"
 
 st.set_page_config(page_title="Billing — Paper IQ", page_icon="💳")
 
