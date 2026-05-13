@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_BASE = "https://researchpaper-analyser.onrender.com/api/v1"
+API_BASE = "https://researchpaper-analyser.onrender.com"
 
 st.set_page_config(
     page_title="Paper IQ",
@@ -26,7 +26,8 @@ def hide_sidebar():
 
 def do_login(email, password):
     try:
-        resp = requests.post(f"{API_BASE}/auth/login", json={"email": email, "password": password}, timeout=60)
+        payload = {"email": email, "password": password}
+        resp = requests.post(f"{API_BASE}/api/v1/auth/login", json=payload, timeout=60)
         data = resp.json()
         if data.get("success"):
             st.session_state.token = data["data"]["access_token"]
