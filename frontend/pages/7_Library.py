@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 
-API_BASE = "https://researchpaper-analyser.onrender.com"
+API_BASE = "https://researchpaper-analyser.onrender.com/api/v1"
 
 st.set_page_config(page_title="Manage Library — Paper IQ", page_icon="📚", layout="wide")
 

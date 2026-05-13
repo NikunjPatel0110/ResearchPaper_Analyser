@@ -100,7 +100,7 @@
 import streamlit as st
 import requests
 
-API_BASE = "https://researchpaper-analyser.onrender.com"
+API_BASE = "https://researchpaper-analyser.onrender.com/api/v1"
 
 st.set_page_config(page_title="Upload — Paper IQ", page_icon="📤", layout="wide")
 
